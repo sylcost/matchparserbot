@@ -12,3 +12,7 @@ Install NodeJS
 `npm run build`
  
  to be continued
+
+`node server.js`
+
+`python server.py`
