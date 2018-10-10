@@ -1,36 +1,36 @@
 from __future__ import division
 from flask import Flask
 from apscheduler.schedulers.background import BackgroundScheduler
-from pytube import YouTube
-import time
-import datetime
 from flask_pymongo import PyMongo
 import pymongo
-import pprint
 import logging
-import cv2
-import numpy as np
-import os
-import sys
 from Downloader import Downloader
 from Parser import Parser
+import ConfigParser
+import sys
+import datetime
 
 
 #https://www.youtube.com/watch?v=u3DVs2XS50A   messenger
     #https://www.youtube.com/watch?v=60WNEb6dHsM   acho
 
 app = Flask(__name__)
+logLevels = {"DEBUG":10, "INFO":20, "WARNING":30, "ERROR":40,"CRITICAL":50}
+level = logLevels["INFO"]
 
-filesize = 0
-currentDownloadPercentage = 0
-idVideo = ""
+Config = ConfigParser.ConfigParser()
+Config.read("conf.ini")
+levelConf = Config.get('LOG', 'level')
 
+if levelConf != None and logLevels[levelConf] != None:
+    level = logLevels[levelConf]
 
+print level
 #logger
 log = logging.getLogger('apscheduler.executors.default')
 log2 = logging.getLogger('apscheduler.scheduler')
-log.setLevel(logging.DEBUG)  # DEBUG
-log2.setLevel(logging.DEBUG)  # DEBUG
+log.setLevel(level)
+log2.setLevel(level)
 
 fmt = logging.Formatter('%(levelname)s:%(name)s:%(message)s')
 h = logging.StreamHandler()
@@ -38,19 +38,24 @@ h.setFormatter(fmt)
 log.addHandler(h)
 log2.addHandler(h)
 
+if Config.get('DB', 'mongoHost') == "" or Config.get('DB', 'mongoPort') == "" or Config.get('DB', 'mongoDbName') == "":
+    print("please configure mongo connection")
+    sys.exit()
+
 #mongodb
-app.config["MONGO_URI"] = "mongodb://localhost:27017/matchparserdb"
+app.config["MONGO_URI"] = "mongodb://"+Config.get('DB', 'mongoHost')+":"+Config.get('DB', 'mongoPort')+"/"+Config.get('DB', 'mongoDbName')
 mongo = PyMongo(app)
 
 downloader = Downloader(mongo)
 parser = Parser(mongo)
 
+scheduler = None
 
-now = datetime.datetime.now()
 
-
-tt = True
-compteur = 0
+@app.route('/firemainjob')
+def index():
+    print("fire scheduler")
+    scheduler.get_job("mainJob").modify(next_run_time=datetime.now())
 
 def work():
     print("work")
@@ -62,7 +67,6 @@ def work():
         downloader.downloadVideo(id)
         parser.parsevideo(id)
         id = getNextVideoId()
-        id = ""
 
     print("fin work")
 
@@ -80,14 +84,11 @@ def getNextVideoId():
 
 
 
-
-
-
-
 if __name__ == '__main__':
+    global scheduler
     scheduler = BackgroundScheduler()
 
-    scheduler.add_job(work, 'interval', seconds=10, misfire_grace_time=None)
-    scheduler.start()
+    scheduler.add_job(work, 'interval', seconds=10, id="mainJob", misfire_grace_time=None)
+    #scheduler.start()
 
 app.run()
