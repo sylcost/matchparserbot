@@ -5,10 +5,12 @@ class Downloader(object):
     idVideo = ""
     filesize = 0
     currentPercentage = 0
+    videoFolder = ""
 
     # The class "constructor" - It's actually an initializer
-    def __init__(self, mongodb):
+    def __init__(self, mongodb, videoFolder):
         self.mongodb = mongodb
+        self.videoFolder = videoFolder
         self.idVideo = ""
         self.filesize = 0
         self.currentPercentage = 0
@@ -41,7 +43,7 @@ class Downloader(object):
             "$set": {
                 "status": "DOWNLOADING"
             }})
-        vid.download("E:/Dev/videos", id)
+        vid.download(self.videoFolder, id)
         self.mongodb.db.videos.update({
             "_id": id
         }, {

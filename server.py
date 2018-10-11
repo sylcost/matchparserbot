@@ -1,5 +1,5 @@
 from __future__ import division
-from flask import Flask
+from flask import Flask, jsonify
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask_pymongo import PyMongo
 import pymongo
@@ -9,26 +9,41 @@ from Parser import Parser
 import ConfigParser
 import sys
 import datetime
+import os
 
 
 #https://www.youtube.com/watch?v=u3DVs2XS50A   messenger
     #https://www.youtube.com/watch?v=60WNEb6dHsM   acho
 
 app = Flask(__name__)
+scheduler = None
 
 # init log levels
 logLevels = {"DEBUG":10, "INFO":20, "WARNING":30, "ERROR":40,"CRITICAL":50}
-# defualt log level
-level = logLevels["INFO"]
 
 # read conf
 Config = ConfigParser.ConfigParser()
 Config.read("conf.ini")
 
-# get log level from conf if specified
-levelConf = Config.get('LOG', 'level')
-if levelConf != None and logLevels[levelConf] != None:
-    level = logLevels[levelConf]
+''' check if conf is valid '''
+try:
+    # get mongo conf
+    if Config.get('DB', 'mongoHost') == "" or Config.get('DB', 'mongoPort') == "" or Config.get('DB', 'mongoDbName') == "":
+        print("please configure mongo connection in conf.ini")
+        sys.exit()
+    # check conf parser
+    if Config.get('PARSER', 'videoFolder') == "" or Config.get('PARSER', 'characterFolder') == "" or Config.get('PARSER', 'templateFolder') == "":
+        print("please configure work folders for the parser in conf.ini")
+        sys.exit()
+    if not os.path.isdir(Config.get('PARSER', 'videoFolder')) or not os.path.isdir(Config.get('PARSER', 'characterFolder')) or not os.path.isdir(Config.get('PARSER', 'templateFolder')):
+        print("please configure acual folders for the parser in conf.ini")
+        sys.exit()
+    # get log level from conf if specified
+    level = Config.get('LOG', 'level')
+
+except Exception as e:
+    print("Error reading conf: "+str(e))
+    sys.exit()
 
 # loggers
 log = logging.getLogger('apscheduler.executors.default')
@@ -41,25 +56,22 @@ h.setFormatter(fmt)
 log.addHandler(h)
 log2.addHandler(h)
 
-# get mongo conf
-if Config.get('DB', 'mongoHost') == "" or Config.get('DB', 'mongoPort') == "" or Config.get('DB', 'mongoDbName') == "":
-    print("please configure mongo connection in conf.ini")
-    sys.exit()
-
 #mongodb
 app.config["MONGO_URI"] = "mongodb://"+Config.get('DB', 'mongoHost')+":"+Config.get('DB', 'mongoPort')+"/"+Config.get('DB', 'mongoDbName')
 mongo = PyMongo(app)
 
+
+
 # objects doing the work
-downloader = Downloader(mongo)
-parser = Parser(mongo)
-scheduler = None
+downloader = Downloader(mongo, Config.get('PARSER', 'videoFolder'))
+parser = Parser(mongo, Config.get('PARSER', 'videoFolder'), Config.get('PARSER', 'characterFolder'), Config.get('PARSER', 'templateFolder'))
 
 # fire the main job
 @app.route('/firemainjob')
 def index():
     print("fire scheduler")
-    scheduler.get_job("mainJob").modify(next_run_time=datetime.now())
+    scheduler.get_job("mainJob").modify(next_run_time=datetime.datetime.now())
+    return jsonify({"fire": "ok"})
 
 
 # Launched  by scheduler
@@ -111,7 +123,6 @@ def correctDB():
 
 
 if __name__ == '__main__':
-    global scheduler
     scheduler = BackgroundScheduler()
     correctDB()
 

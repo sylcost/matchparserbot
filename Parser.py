@@ -5,19 +5,23 @@ import sys
 
 class Parser(object):
     mongodb = ""
+    videoFolder = ""
+    characterFolder = ""
+    templateFolder = ""
 
     # The class "constructor" - It's actually an initializer
-    def __init__(self, mongodb):
+    def __init__(self, mongodb, videoFolder, characterFolder, templateFolder):
         self.mongodb = mongodb
+        self.videoFolder = videoFolder
+        self.characterFolder = characterFolder
+        self.templateFolder = templateFolder
+
 
 
     def parsevideo(self, id):
         matchFound = []
         print("Nouvelle video :"+id+".mp4")
-        dossierVideos = "E:/Dev/videos/"
-        dossierCharacters720 = "E:/Dev/images/characters/"
-        dossierTemplates = "E:/Dev/images/templates/"
-        cam = cv2.VideoCapture(dossierVideos + id + ".mp4")
+        cam = cv2.VideoCapture(self.videoFolder + id + ".mp4")
         frameTotal = cam.get(cv2.CAP_PROP_FRAME_COUNT)
         currentPercentageParsing = 0
         print(str(frameTotal)+" frames")
@@ -74,20 +78,20 @@ class Parser(object):
         threshold_rebel1 = 0.1
         threshold_chiffre1 = 0.15
 
-        rebel1 = cv2.imread(dossierTemplates+'rebel1.png', 0)
+        rebel1 = cv2.imread(self.templateFolder+'rebel1.png', 0)
         rebel1_canny = cv2.Canny(rebel1, canny_lower_threshold, canny_upper_threshold)
 
         # les chiffres
-        chiffre1_gray = cv2.imread(dossierTemplates+'1.png', 0)
+        chiffre1_gray = cv2.imread(self.templateFolder+'1.png', 0)
         chiffre1_edged = cv2.Canny(chiffre1_gray, canny_lower_threshold, canny_upper_threshold)
-        chiffre2_gray = cv2.imread(dossierTemplates+'2.png', 0)
+        chiffre2_gray = cv2.imread(self.templateFolder+'2.png', 0)
         chiffre2_edged = cv2.Canny(chiffre2_gray, canny_lower_threshold, canny_upper_threshold)
 
         # gestion template personnages
         mapTemplate = []
         if height == 720:
-            for filename in os.listdir(dossierCharacters720):
-                template = cv2.imread(dossierCharacters720+filename,0)
+            for filename in os.listdir(self.characterFolder):
+                template = cv2.imread(self.characterFolder+filename,0)
                 mapTemplate.append([filename[:-8], template])
 
         while True:
@@ -188,5 +192,5 @@ class Parser(object):
         cv2.destroyAllWindows()
 
         # on supprime la video
-        os.remove(dossierVideos + id + ".mp4")
+        os.remove(self.videoFolder + id + ".mp4")
 
