@@ -96,7 +96,7 @@ app.get('/addvideo/:url', async function(req, res) {
     res.send(video)
 });
 
-
+// Check if the video can be added to DB
 checkVideo = async (url) => {
 
     try {
@@ -129,8 +129,7 @@ checkVideo = async (url) => {
     }
 }
 
-
-
+// ms => hh:mm:ss
 formatLength = (timeInSeconds) => {
     let seconds = timeInSeconds % 60
     let minutes = ((timeInSeconds - seconds) / 60) % 60
@@ -148,6 +147,7 @@ formatLength = (timeInSeconds) => {
     return length
 }
 
+// Unable to get the published date from ytdl-core
 getPublishedDate = async (id) => {
     let result = "";
     const url = "https://www.googleapis.com/youtube/v3/videos?id="+id+"&key="+SECRET_KEY+"&part=snippet"
@@ -166,6 +166,7 @@ getPublishedDate = async (id) => {
     return result
 }
 
+// Retrieve video infos from DB, if present
 getVideoFromDB = async (id) => {
     let result = {}
     let matches = []
@@ -189,6 +190,7 @@ getVideoFromDB = async (id) => {
     return result
 }
 
+// Store video info in DB
 addVideo = async (vid) => {
     let result = {}
     const video = {
@@ -211,7 +213,7 @@ addVideo = async (vid) => {
     return video
 }
 
-
+// Scheduler to browse last videos from GAMEacho and add them to DB to be parsed later
 checkYoutubeChannelForNewVideos = async () => {
 
     const GAMEachoId = "UCCfnriDcUslGMUMX4Ctkyjg"
@@ -222,8 +224,6 @@ checkYoutubeChannelForNewVideos = async () => {
         let data = await fetch(url)
         let json = await data.json()
         
-        //console.log(JSON.stringify(json))
-        console.log(" ")
         if (json.items) {
     
             const vids = json.items.filter(activity => {
