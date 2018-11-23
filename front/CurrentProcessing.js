@@ -1,21 +1,23 @@
 import React from 'react'
 import { observer } from 'mobx-react'
-import { ProgressBar, Well, Image, Panel, Grid, Row, Col, Table, ListGroup, ListGroupItem, Label, Jumbotron } from 'react-bootstrap'
+import { Well } from 'react-bootstrap'
 import "./css/styles.css"
-import store from './store/Store.js'
 import { VideoQueued } from './VideoQueued.js'
 
 
-export const CurrentProcess = observer(() => {
+export const CurrentProcess = observer((props) => {
 
 
-    let videos = store.currentProcessing.videos.map(video => <VideoQueued video={video} key={video.url}/>)
-
+    let videoList = props.videos.map(video => <VideoQueued video={video} key={video.url}/>)
+    let videos = 
+    (<Well>
+        <h2>Next video(s) to process</h2>
+        {videoList}
+    </Well>)
+    
     return (
         <div>
-            <Well>current processing stuff
-                {videos}
-            </Well>
+            {props.videos.length > 0 ? videos : null}
         </div>
     );
 

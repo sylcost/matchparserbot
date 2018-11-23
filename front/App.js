@@ -1,7 +1,7 @@
 import React from 'react'
 import { observer } from 'mobx-react'
 import { applySnapshot } from "mobx-state-tree";
-import { Grid, Jumbotron, Button, Well, Row, Col, ControlLabel, FormControl, FormGroup, HelpBlock, Image, Panel, Fade, Label, Table } from 'react-bootstrap'
+import { Grid, Jumbotron, Well, Col, ControlLabel, FormControl, FormGroup, HelpBlock } from 'react-bootstrap'
 import { Navbar, NavItem, Nav } from 'react-bootstrap'
 import "./css/styles.css"
 import store from './store/Store.js'
@@ -13,11 +13,11 @@ import io from 'socket.io-client'
 
 const socket = io('http://localhost:3000')
 socket.on('news', function (data) {
-    console.log("event news:"+JSON.stringify(data))
+    //console.log("event news:"+JSON.stringify(data))
     //socket.emit('eventFromFront', { my: 'data' });
-    console.log("avant:"+JSON.stringify(store.currentProcessing))
+    //console.log("avant:"+JSON.stringify(store.currentProcessing))
     applySnapshot(store.currentProcessing.videos, data)
-    console.log("apres:"+JSON.stringify(store.currentProcessing))
+    //console.log("apres:"+JSON.stringify(store.currentProcessing))
 });
 socket.on('connect', function() {
     //socket.emit('eventFromFront', {data: 'I\'m connected!'});
@@ -25,22 +25,20 @@ socket.on('connect', function() {
 
 export const App = observer(() => {
 
-    
-
     return (
         <div>
-            <Navbar>
+            <Navbar inverse collapseOnSelect>
                 <Navbar.Header>
                     <Navbar.Brand>
-                    <a href="#home">React-Bootstrap</a>
+                        <a href="#home">MatchParserBot</a>
                     </Navbar.Brand>
                 </Navbar.Header>
                 <Nav>
-                    <NavItem eventKey={1} href="#">
-                    Link
+                    <NavItem  href="#">
+                        Home
                     </NavItem>
-                    <NavItem eventKey={2} href="#">
-                    Link
+                    <NavItem  href="#">
+                        Search
                     </NavItem>
                 </Nav>
             </Navbar>
@@ -51,15 +49,12 @@ export const App = observer(() => {
                         This is a simple website to parse BBCF2 videos from gameacho youtube channel.
                     </p>
                 </Jumbotron>
-                <Well>https://www.youtube.com/watch?v=60WNEb6dHsM</Well>
                 <Grid id="test1" bsClass='container-fluid'>
-                    <Col md={2}>
-                        Bullshit stuff
-                    </Col>
+                    <Col md={2} />
                     <Col md={8}>
                         <FormGroup
                             controlId="formBasicText" >
-                            <ControlLabel>https://www.youtube.com/watch?v=waR5xaZIQx8</ControlLabel>
+                            <h2>Paste Youtube URL here</h2>
                             <FormControl
                                 bsSize="large"
                                 type="text"
@@ -67,17 +62,17 @@ export const App = observer(() => {
                                 placeholder="https://www.youtube.com/watch?v=60WNEb6dHsM"
                                 onChange={(url) => store.changeUrl(url)} />
                             <FormControl.Feedback />
-                            <HelpBlock>Validation is based on string length.</HelpBlock>
                         </FormGroup>
-                        <VideoChecked />
+                        <VideoChecked 
+                            video={store.mainPage.videoChecked} 
+                            checkingVideo={store.mainPage.checkingVideo} 
+                            addVideoFunc={() => store.addVideo()} 
+                            addingVideo={store.mainPage.addingVideo} />
                     </Col>
-                    <Col md={2}>
-                        <Well>https://www.youtube.com/watch?v=60WNEb6dHsM</Well>
-                        
-                    </Col>
+                    <Col md={2} />
                 </Grid>
                 <br/>
-                <CurrentProcess />
+                <CurrentProcess videos={store.currentProcessing.videos}/>
             </Grid>
         </div>
     );

@@ -24,7 +24,7 @@ export const VideoQueued = observer((props) => {
                         <div align="right">Parsing</div>
                     </Col>
                     <Col md={10}>
-                        <MyProgressBar percent={Math.round(100*props.video.frameCounter/props.video.frameTotal)} /> 
+                        <MyProgressBar percent={props.video.parsing} /> 
                     </Col>
                 </Row>
             </Grid>)
