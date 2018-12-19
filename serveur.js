@@ -1,7 +1,8 @@
 const path = require('path')
 const express = require('express')
 const app = express();
-app.use(express.static(path.join(__dirname,"/front")));
+//app.use(express.static(path.join(__dirname,"/front_boostrap")));
+app.use(express.static(path.join(__dirname,"/front_materialui")));
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
 const cron = require('node-cron');
@@ -61,15 +62,36 @@ app.get('/', (req, res) => {
 });
 
 
+app.get('/test/:url', async function(req, res) {
+    console.log("test")
+    let result = {}
+    let matches = []
+    try {
+        result = await Video.aggregate([
+            { "$match": { "_id": req.params.url } },
+            { $lookup: {
+                    from: "matches",
+                    localField: "_id",
+                    foreignField: "idVideo",
+                    as: "matches"
+                }
+        }])
+    } 
+    catch (err) {
+        console.log(`Error during getVideoFromDB() : ${err}`)
+    }
+    res.send(result)
+});
+
 app.get('/checkvideo/:url', async function(req, res) {
-    console.log(req.params.url)
+    //console.log(req.params.url)
     let result = await checkVideo(req.params.url)
-    console.log("result:"+JSON.stringify(result))
+    //console.log("result:"+JSON.stringify(result))
     res.send(result)
 });
 
 app.get('/addvideo/:url', async function(req, res) {
-    console.log(req.params.url)
+    //console.log(req.params.url)
     let video = {}
     try {
         video = await checkVideo(req.params.url)
@@ -77,7 +99,7 @@ app.get('/addvideo/:url', async function(req, res) {
             video = await addVideo(video)
             if (!video.error) {
                 // Video has been successfully added
-                video = {...video, "rejectCode": 1}
+                video = {...video, "rejectCode": 6}
             } // TODO si l'ajout a eu une erreur, faire un truc
         }
     } 
@@ -99,34 +121,43 @@ app.get('/addvideo/:url', async function(req, res) {
 // Check if the video can be added to DB
 checkVideo = async (url) => {
 
+    let result = {}
     try {
         let valid = ytdl.validateURL('http://www.youtube.com/watch?v='+url)
         if (valid) {
-            let result = await ytdl.getBasicInfo('http://www.youtube.com/watch?v='+url)
-            let publishedDate = await getPublishedDate(result.video_id)
-            const videoDB = await getVideoFromDB(result.video_id)
+            let basicInfos = await ytdl.getBasicInfo('http://www.youtube.com/watch?v='+url)
+            //console.log(JSON.stringify(basicInfos.player_response.videoDetails.thumbnail.thumbnails))
+            let maxResThumbnail = basicInfos.thumbnail_url
+            let res336Thumbnail = basicInfos.player_response.videoDetails.thumbnail.thumbnails.filter((tn) => {
+                return tn.width == "336"
+            })
+            maxResThumbnail = res336Thumbnail[0].url
+            console.log("maxResThumbnail:"+JSON.stringify(res336Thumbnail[0]))
+            let publishedDate = await getPublishedDate(basicInfos.video_id)
+            const videoDB = await getVideoFromDB(basicInfos.video_id)
             
             let videoInfo = {
-                "thumbnail": result.thumbnail_url,
-                "title": result.title,
-                "channelName": result.author.name,
-                "channelUrl": result.author.channel_url,
-                "length": formatLength(result.length_seconds),
-                "url": result.video_url,
-                "publishedDate": publishedDate,
-                "_id": result.video_id
+                "thumbnail": maxResThumbnail,
+                "title": basicInfos.title,
+                "channelName": basicInfos.author.name,
+                "channelUrl": basicInfos.author.channel_url,
+                "length": formatLength(basicInfos.length_seconds),
+                "url": basicInfos.video_url,
+                "publishedDate": publishedDate
             }
-            let rejectGameACHO = "GAMEacho" !== result.author.name ? {"rejectCode": 5} : {}
-            let rejectName = result.title.indexOf("BBCF") > 0 || result.title.indexOf("BLAZBLUE") > 0 ? {} : {"rejectCode": 3}
-            return {...videoInfo, ...rejectGameACHO, ...rejectName, ...videoDB}
+            let rejectGameACHO = "GAMEacho" !== basicInfos.author.name ? {"rejectCode": 5} : {}
+            let rejectName = basicInfos.title.indexOf("BBCF") > 0 || basicInfos.title.indexOf("BLAZBLUE") > 0 ? {} : {"rejectCode": 3}
+            result = {...videoInfo, ...rejectGameACHO, ...rejectName, ...videoDB}
     
         } else {
-            return {"rejectCode": 2}
+            result = {"rejectCode": 2}
         }
     }
     catch (err) {
         console.log(`Error during checkVideo() : ${err}`)
     }
+
+    return result
 }
 
 // ms => hh:mm:ss
@@ -169,25 +200,55 @@ getPublishedDate = async (id) => {
 // Retrieve video infos from DB, if present
 getVideoFromDB = async (id) => {
     let result = {}
-    let matches = []
+    let reject = {}
     try {
-        const video = await Video.findById(id)
-        if (video) {
+        // const video = await Video.findById(id)
+        // if (video) {
     
-            if (video.status === "FINISHED") {
-                matches = await Match.find({"idVideo": id })
-            }
-            result = {
-                "rejectCode": 1,
-                "matches": matches
+        //     if (video.status === "FINISHED") {
+        //         matches = await Match.find({"idVideo": id })
+        //         result = {
+        //             "rejectCode": 1,
+        //             "matches": matches
+        //         }
+        //     } else {
+        //         result = {
+        //             "rejectCode": 6
+        //         }
+        //     }
+        // }
+
+        result = await Video.aggregate([
+            { "$match": { "_id": id } },
+            { $lookup: {
+                    from: "matches",
+                    localField: "_id",
+                    foreignField: "idVideo",
+                    as: "matches"
+                }
+        }])
+
+        if (result && result[0]) {
+            result = result[0]
+            if (result.status === "FINISHED") {
+                reject = {
+                    "rejectCode": 1
+                }
+            } else {
+                reject = {
+                    "rejectCode": 6
+                }
             }
         }
+
+        
+
     } 
     catch (err) {
         console.log(`Error during getVideoFromDB() : ${err}`)
     }
     
-    return result
+    return {...result, ...reject}
 }
 
 // Store video info in DB
@@ -285,6 +346,6 @@ schedulerWs = async () => {
 
 // Lancement du Job WS toutes les 10s.
 cron.schedule('*/5 * * * * *', schedulerWs);
-//cron.schedule('0 * * * * *', checkYoutubeChannelForNewVideos);
+cron.schedule('0 * * * * *', checkYoutubeChannelForNewVideos);
 
 
