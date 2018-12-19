@@ -3,7 +3,7 @@ import os
 import sys
 from jsonmerge import merge
 
-class Parser(object):
+class ParserTest(object):
     mongodb = ""
     videoFolder = ""
     characterFolder = ""
@@ -17,6 +17,84 @@ class Parser(object):
         self.templateFolder = templateFolder
 
 
+    def test(self):
+        cam = cv2.VideoCapture(self.videoFolder + "gUsyr7s_G1o.mp4")
+        frameTotal = cam.get(cv2.CAP_PROP_FRAME_COUNT)
+        currentPercentageParsing = 0
+        print(str(frameTotal) + " frames")
+        width = cam.get(cv2.CAP_PROP_FRAME_WIDTH)
+        height = cam.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        framerate = cam.get(cv2.CAP_PROP_FPS)
+        # step is the number of check for 'Rebel 1' per second, at the end of each check, we jump step frame
+        step = framerate / 5
+        # lastUpdate is the last time parsing progress has been saved in DB
+        lastUpdate = 0
+
+        print("width:" + str(width) + " height:" + str(height) + " framerate=" + str(framerate))
+
+        if height != 720:
+            print("Uniquement 720p !!!")
+            sys.exit()
+
+
+        ''' threshold pour Canny '''
+        canny_lower_threshold = 10
+        canny_upper_threshold = 200
+        rebel1 = cv2.imread(self.templateFolder + 'chiffre1_complet.png', 0)
+        rebel1_canny = cv2.Canny(rebel1, canny_lower_threshold, canny_upper_threshold)
+
+        cv2.imshow('image', rebel1_canny)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+        while True:
+            ret, frame = cam.read()
+            if frame is None:
+                break
+
+            timestamp = cam.get(cv2.CAP_PROP_POS_MSEC)
+
+            #img = cv2.imread(frame[100:150, 200:250], cv2.IMREAD_GRAYSCALE)
+            '''
+            e_left_y1 = 255
+            e_left_y2 = 322
+            e_left_x1 = 537
+            e_left_x2 = 553
+            
+            r_left_y1 = 255
+            r_left_y2 = 322
+            r_left_x1 = 453
+            r_left_x2 = 470
+            '''
+            roi_rebel1 = frame[360:480, 610:670]
+            roi_rebel1_gray = cv2.cvtColor(roi_rebel1, cv2.COLOR_BGR2GRAY)
+            roi_rebel1_edged = cv2.Canny(roi_rebel1_gray, canny_lower_threshold, canny_upper_threshold)
+            resultatRebel1 = cv2.matchTemplate(roi_rebel1_edged, rebel1_canny, cv2.TM_CCOEFF_NORMED)
+            min_val, max_val_rebel1, min_loc, max_loc = cv2.minMaxLoc(resultatRebel1)
+
+            print("max_val_rebel1:" + str(max_val_rebel1))
+            cv2.imshow('image', frame[360:480, 610:670])
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+
+            '''
+            if max_val_rebel1 >= 0.3 and max_val_rebel1 != 1:
+                print("max_val_rebel1:" + str(max_val_rebel1))
+                # on note minute/seconde
+                secondes = round(timestamp / 1000, 0)
+                resteSecondes = secondes % 60
+                minutes = (secondes - resteSecondes) / 60
+                resteMinutes = minutes % 60
+                heures = (minutes - resteMinutes) / 60
+                heures = str(heures)[:-2]
+                resteMinutes = str(resteMinutes)[:-2]
+                resteSecondes = str(resteSecondes)[:-2]
+                print(heures+":"+resteMinutes+":"+resteSecondes)
+                cv2.imshow('image', frame[253:324, 445:835])
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
+            '''
+
 
     def parsevideo(self, id):
         matchFound = []
@@ -25,12 +103,6 @@ class Parser(object):
         frameTotal = cam.get(cv2.CAP_PROP_FRAME_COUNT)
         currentPercentageParsing = 0
         print(str(frameTotal)+" frames")
-        self.mongodb.db.videos.update({
-            "_id": id
-        }, {
-            "$set": {
-                "status": "PARSING"
-        }})
 
         width = cam.get(cv2.CAP_PROP_FRAME_WIDTH)
         height = cam.get(cv2.CAP_PROP_FRAME_HEIGHT)
@@ -58,21 +130,26 @@ class Parser(object):
         x2p2 = int(width*1)
         y1p2 = int(height*0)
         y2p2 = int(height*.2)
+        # rebel1
+        x1rebel1 = int(width*.33)
+        x2rebel1 = int(width*.66)
+        y1rebel1 = int(height*.28)
+        y2rebel1 = int(height*.72)
         # rebel
         x1rebel = 445
         x2rebel = 835
         y1rebel = 253
         y2rebel = 324
+        # chiffre 1 et 2
+        x1chiffre = int(width*.43)
+        x2chiffre = int(width*.52)
+        y1chiffre = int(height*.45)
+        y2chiffre = int(height*.72)
         # chiffre 1 360:480, 610:670
         x1chiffre1 = 610
         x2chiffre1 = 670
         y1chiffre1 = 360
         y2chiffre1 = 480
-
-        x1chiffre = int(width * .43)
-        x2chiffre = int(width * .52)
-        y1chiffre = int(height * .45)
-        y2chiffre = int(height * .72)
 
         ''' threshold pour Canny '''
         canny_lower_threshold = 10
@@ -88,6 +165,8 @@ class Parser(object):
         # les chiffres
         chiffre1_gray = cv2.imread(self.templateFolder+'chiffre1_complet.png', 0)
         chiffre1_edged = cv2.Canny(chiffre1_gray, canny_lower_threshold, canny_upper_threshold)
+        #chiffre2_gray = cv2.imread(self.templateFolder+'2.png', 0)
+        #chiffre2_edged = cv2.Canny(chiffre2_gray, canny_lower_threshold, canny_upper_threshold)
 
         # gestion template personnages
         mapTemplate = []
@@ -103,32 +182,37 @@ class Parser(object):
             framenb = cam.get(cv2.CAP_PROP_POS_FRAMES)
             timestamp = cam.get(cv2.CAP_PROP_POS_MSEC)
 
-            percent = (100 * framenb) // frameTotal
-            if percent > currentPercentageParsing:
-                currentPercentageParsing = percent
-                self.mongodb.db.videos.update({
-                    "_id": id
-                }, {
-                    "$set": {
-                        "parsing": currentPercentageParsing
-                    }})
-
             roi_rebel = frame[y1rebel:y2rebel, x1rebel:x2rebel]
             roi_rebel_gray = cv2.cvtColor(roi_rebel, cv2.COLOR_BGR2GRAY)
             roi_rebel_edged = cv2.Canny(roi_rebel_gray, canny_lower_threshold, canny_upper_threshold)
             resultatRebel = cv2.matchTemplate(roi_rebel_edged, rebel_canny, cv2.TM_CCOEFF_NORMED)
             min_val, max_val_rebel, min_loc, max_loc = cv2.minMaxLoc(resultatRebel)
 
-            if max_val_rebel >= threshold_rebel:
-                #rebel1 detecte, on verifie que le chiffre est bien un 1
+            if max_val_rebel >= threshold_rebel and max_val_rebel != 1:
+
+                # on note minute/seconde
+                secondes = round(timestamp / 1000, 0)
+                resteSecondes = secondes % 60
+                minutes = (secondes - resteSecondes) / 60
+                resteMinutes = minutes % 60
+                heures = (minutes - resteMinutes) / 60
+                heures = str(heures)[:-2]
+                resteMinutes = str(resteMinutes)[:-2]
+                resteSecondes = str(resteSecondes)[:-2]
+
+                print(heures+":"+resteMinutes+":"+resteSecondes+"       "+str(max_val_rebel))
+                #rebel detecte, on verifie que le chiffre est bien un 1
 
                 # roi_chiffre1
                 roi_chiffre = frame[y1chiffre:y2chiffre, x1chiffre:x2chiffre]
                 roi_chiffre_gray = cv2.cvtColor(roi_chiffre, cv2.COLOR_BGR2GRAY)
                 roi_chiffre_edged = cv2.Canny(roi_chiffre_gray, canny_lower_threshold, canny_upper_threshold)
                 resultatChiffre1 = cv2.matchTemplate(roi_chiffre_edged, chiffre1_edged, cv2.TM_CCOEFF_NORMED)
+                #resultatChiffre2 = cv2.matchTemplate(roi_chiffre_edged, chiffre2_edged, cv2.TM_CCOEFF_NORMED)
                 min_val, max_val_chiffre1, min_loc, max_loc = cv2.minMaxLoc(resultatChiffre1)
+                #min_val, max_val_chiffre2, min_loc, max_loc = cv2.minMaxLoc(resultatChiffre2)
 
+                print(str(max_val_chiffre1))
                 if max_val_chiffre1 > threshold_chiffre1:
                     # REBEL 1 confirme : nouveau match
 
@@ -158,15 +242,7 @@ class Parser(object):
                             maxMatchP2 = max_val
                             nomP2 = couple[0] if max_val > 0.6 else couple[0]+'?'
 
-                    # on note minute/seconde
-                    secondes = round(timestamp / 1000, 0)
-                    resteSecondes = secondes % 60
-                    minutes = (secondes - resteSecondes) / 60
-                    resteMinutes = minutes % 60
-                    heures = (minutes - resteMinutes) / 60
-                    heures = str(heures)[:-2]
-                    resteMinutes = str(resteMinutes)[:-2]
-                    resteSecondes = str(resteSecondes)[:-2]
+
 
                     # On ajoute 1s pour eviter de refaire le test avec la frame d'apres
                     cam.set(cv2.CAP_PROP_POS_FRAMES, framenb + framerate)
@@ -187,17 +263,7 @@ class Parser(object):
             cam.set(cv2.CAP_PROP_POS_FRAMES, framenb + step)
 
         # update db
-        self.mongodb.db.videos.update({
-            "_id": id
-        }, {
-            "$set": {
-                "parsing": 100,
-                "status": "FINISHED"
-        }})
 
-        for match in matchFound:
-            matchDb = merge({"idVideo": id}, match)
-            self.mongodb.db.matches.insert_one(matchDb)
 
         print("fin parsing")
         print(matchFound)
@@ -205,5 +271,5 @@ class Parser(object):
         cv2.destroyAllWindows()
 
         # on supprime la video
-        os.remove(self.videoFolder + id + ".mp4")
+
 

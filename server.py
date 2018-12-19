@@ -6,6 +6,7 @@ import pymongo
 import logging
 from Downloader import Downloader
 from Parser import Parser
+from ParserTest import ParserTest
 import ConfigParser
 import sys
 import datetime
@@ -65,6 +66,7 @@ mongo = PyMongo(app)
 # objects doing the work
 downloader = Downloader(mongo, Config.get('PARSER', 'videoFolder'))
 parser = Parser(mongo, Config.get('PARSER', 'videoFolder'), Config.get('PARSER', 'characterFolder'), Config.get('PARSER', 'templateFolder'))
+parserTest = ParserTest(mongo, Config.get('PARSER', 'videoFolder'), Config.get('PARSER', 'characterFolder'), Config.get('PARSER', 'templateFolder'))
 
 # fire the main job
 @app.route('/firemainjob')
@@ -73,6 +75,15 @@ def index():
     scheduler.get_job("mainJob").modify(next_run_time=datetime.datetime.now())
     return jsonify({"fire": "ok"})
 
+
+
+# local test
+@app.route('/testlocal')
+def testLocal():
+    print("test local")
+    parserTest.parsevideo("gUsyr7s_G1o")
+    #parserTest.test()
+    print("fin test local")
 
 # Launched  by scheduler
 # Get next video to DL from DB
