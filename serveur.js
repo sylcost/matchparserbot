@@ -96,6 +96,7 @@ app.get('/addvideo/:url', async function(req, res) {
     try {
         video = await checkVideo(req.params.url)
         if (!video.rejectCode) {
+            console.log("vid="+JSON.stringify(video))
             video = await addVideo(video)
             if (!video.error) {
                 // Video has been successfully added
@@ -117,7 +118,7 @@ app.get('/addvideo/:url', async function(req, res) {
     
     res.send(video)
 });
-
+//ykYCd6HD58c
 // Check if the video can be added to DB
 checkVideo = async (url) => {
 
@@ -132,7 +133,7 @@ checkVideo = async (url) => {
                 return tn.width == "336"
             })
             maxResThumbnail = res336Thumbnail[0].url
-            console.log("maxResThumbnail:"+JSON.stringify(res336Thumbnail[0]))
+            //console.log("maxResThumbnail:"+JSON.stringify(res336Thumbnail[0]))
             let publishedDate = await getPublishedDate(basicInfos.video_id)
             const videoDB = await getVideoFromDB(basicInfos.video_id)
             
@@ -143,7 +144,8 @@ checkVideo = async (url) => {
                 "channelUrl": basicInfos.author.channel_url,
                 "length": formatLength(basicInfos.length_seconds),
                 "url": basicInfos.video_url,
-                "publishedDate": publishedDate
+                "publishedDate": publishedDate,
+                "_id": basicInfos.video_id
             }
             let rejectGameACHO = "GAMEacho" !== basicInfos.author.name ? {"rejectCode": 5} : {}
             let rejectName = basicInfos.title.indexOf("BBCF") > 0 || basicInfos.title.indexOf("BLAZBLUE") > 0 ? {} : {"rejectCode": 3}
