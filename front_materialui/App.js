@@ -143,7 +143,7 @@ export const App = observer(() => {
 
     let joliParsing = store.mainPage.videoChecked.matches.length + " matches detected.\n" + "Featuring characters :\n"
     let img = characters.map(char => 
-        (<StyledTooltip title={char + " (" + charactersMap.get(char) + ")"} placement="bottom" >
+        (<StyledTooltip title={char + " (" + charactersMap.get(char) + ")"} placement="bottom" key={char}>
             <img src={`icons/${char}.png`} alt={char} style={{width:96, height:96}} key={char}/>
         </StyledTooltip>
 
@@ -151,7 +151,7 @@ export const App = observer(() => {
 
 
     let matchesList = store.mainPage.videoChecked.matches.map(match => (
-        <ListItem >
+        <ListItem key={`${match.hour}+${match.minute}+${match.second}`}>
             <ListItemAvatar>
                 <Avatar alt={match.p1} src={`icons/${match.p1}.png`} />
             </ListItemAvatar>
@@ -209,53 +209,57 @@ export const App = observer(() => {
                 
                 
                 
-                <Grid container justify="center" spacing={24} style={{ paddingTop: 100, paddingBottom: 10 }} >
-                    <Grid container justify="center" xs={4}>
-                        <Collapse in={!!displayVideoInfos} style={{ paddingTop: 10, paddingLeft: 10, paddingRight: 10 }}>
-                        <Grid item justify="center" >
-                            <img src={store.mainPage.videoChecked.thumbnail} alt="thumbnail" style={{width:336, height:188, marginLeft: "auto", marginRight: "auto"}} />
+                    <Grid container justify="center" spacing={24} style={{ paddingTop: 100, paddingBottom: 10 }} >
+                        <Grid item  xs={4}>
+                            <Collapse in={!!displayVideoInfos} >
+                                <Paper elevation={6} style={{backgroundColor: '#546E7A'}}>
+                                    <Grid item  >
+                                        <img src={store.mainPage.videoChecked.thumbnail} alt="thumbnail" style={{width:336, height:188, marginLeft: "auto", marginRight: "auto", display: "block", borderRadius: "15px", paddingTop: 20}} />
+                                    </Grid>
+                                    <Grid item  >
+                                        <div style={{color: "white", paddingLeft: 50, paddingBottom: 20}} >
+                                            <br />
+                                            <a href={store.mainPage.videoChecked.url} style={{color: "white", fontWeight: "bold"}} >{store.mainPage.videoChecked.title}</a>
+                                            <br />
+                                            <a href={store.mainPage.videoChecked.channelUrl} style={{color: "white"}} >{store.mainPage.videoChecked.channelName}</a>
+                                            <br/>
+                                            {store.mainPage.videoChecked.length}
+                                            <br />
+                                            Published : {store.mainPage.videoChecked.publishedDate}
+                                            <br />
+                                        </div>
+                                    </Grid>
+                                </Paper>
+                            </Collapse>
                         </Grid>
-                        <Grid item  >
-                            <div style={{color: "white"}} >
-                                <br />
-                                <a href={store.mainPage.videoChecked.url} style={{color: "white", fontWeight: "bold"}} >{store.mainPage.videoChecked.title}</a>
-                                <br />
-                                <a href={store.mainPage.videoChecked.channelUrl} style={{color: "white"}} >{store.mainPage.videoChecked.channelName}</a>
-                                <br/>
-                                {store.mainPage.videoChecked.length}
-                                <br />
-                                Published : {store.mainPage.videoChecked.publishedDate}
-                                <br />
-                            </div>
+                        <Grid item  xs={4}>
+                            <Collapse in={!!displayVideoInfos} >
+                                <Paper elevation={6} style={{backgroundColor: '#546E7A', paddingTop: 10}}>
+                                    <div style={{color: "white", paddingLeft: 50}}>
+                                        {store.mainPage.videoChecked.matches.length} matches detected.
+                                        <br />
+                                        Featuring {characters.length} differents characters :
+                                        <br />
+                                        
+                                    </div>
+                                    <div>
+                                            {img}
+                                        </div>
+                                </Paper>
+                            </Collapse>
                         </Grid>
-                        
-                        </Collapse>
+                        <Grid item  xs={3}>
+                            <Collapse in={!!displayVideoInfos}  >
+                                <Paper elevation={6} style={{backgroundColor: '#546E7A', paddingTop: 20}}>
+                                    <div >
+                                        <List >
+                                            {matchesList}
+                                        </List>
+                                    </div>
+                                </Paper>
+                            </Collapse>
+                        </Grid>
                     </Grid>
-                    <Grid container justify="center" xs={4}>
-                        <Collapse in={!!displayVideoInfos} style={{ paddingTop: 10, paddingLeft: 10, paddingRight: 10 }}>
-                            <div style={{color: "white"}}>
-                                {store.mainPage.videoChecked.matches.length} matches detected.
-                                <br />
-                                Featuring {characters.length} differents characters :
-                                <br />
-                                <div>
-                                    {img}
-                                </div>
-                            </div>
-                        </Collapse>
-                    </Grid>
-                    <Grid container justify="center" xs={3}>
-                        <Collapse in={!!displayVideoInfos} style={{ paddingTop: 10, paddingLeft: 10, paddingRight: 10 }} >
-                            
-                            <div >
-                                <List >
-                                    {matchesList}
-                                </List>
-                            </div>
-
-                        </Collapse>
-                    </Grid>
-                </Grid>
             </Grid>
         </div>
     );
