@@ -2,7 +2,7 @@
 
 Install PYTHON 2.7
 
-`pip install opencv pytube pymongo apscheduler flask`
+`pip install opencv-python Flask-PyMongo jsonmerge pytube pymongo apscheduler flask`
 
 
 Install NodeJS
