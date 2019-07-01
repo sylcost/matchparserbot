@@ -36,6 +36,7 @@ class Downloader(object):
         self.idVideo = id
         yt = YouTube("https://www.youtube.com/watch?v=" + id, on_progress_callback=self.dlProgress)
         vid = yt.streams.filter(resolution='720p').first()
+        self.currentPercentage = 0
         self.filesize = vid.filesize
         self.mongodb.db.videos.update({
             "_id": id
