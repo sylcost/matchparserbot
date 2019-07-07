@@ -13,7 +13,7 @@ const Promise = require("bluebird");
 
 
 
-const SECRET_KEY = "AIzaSyCVkBrbg4rwjcVtWmWQYLUk8uus-XxN31A"
+const SECRET_KEY = "AIzaSyBnVm0V1vJuEn9784LeSnVkukpwylX87AY"
 
 server.listen(3000, () => {
     console.log(`server ok : http://localhost:3000`);
@@ -100,7 +100,7 @@ app.get('/addvideo/:url', async function(req, res) {
             video = await addVideo(video)
             if (!video.error) {
                 // Video has been successfully added
-                video = {...video, "rejectCode": 6}
+                video = {...video, "rejectCode": "QUEUED"}
             } // TODO si l'ajout a eu une erreur, faire un truc
         }
     } 
@@ -118,6 +118,8 @@ app.get('/addvideo/:url', async function(req, res) {
     
     res.send(video)
 });
+
+
 //ykYCd6HD58c
 // Check if the video can be added to DB
 checkVideo = async (url) => {
@@ -147,12 +149,12 @@ checkVideo = async (url) => {
                 "publishedDate": publishedDate,
                 "_id": basicInfos.video_id
             }
-            let rejectGameACHO = "GAMEacho" !== basicInfos.author.name ? {"rejectCode": 5} : {}
-            let rejectName = basicInfos.title.indexOf("BBCF") > 0 || basicInfos.title.indexOf("BLAZBLUE") > 0 ? {} : {"rejectCode": 3}
+            let rejectGameACHO = "GAMEacho" !== basicInfos.author.name ? {"rejectCode": "BADCHANNEL"} : {}
+            let rejectName = basicInfos.title.indexOf("BBCF") > 0 || basicInfos.title.indexOf("BLAZBLUE") > 0 ? {} : {"rejectCode": "BADNAME"}
             result = {...videoInfo, ...rejectGameACHO, ...rejectName, ...videoDB}
     
         } else {
-            result = {"rejectCode": 2}
+            result = {"rejectCode": "NOTVALID"}
         }
     }
     catch (err) {
@@ -186,10 +188,13 @@ getPublishedDate = async (id) => {
     const url = "https://www.googleapis.com/youtube/v3/videos?id="+id+"&key="+SECRET_KEY+"&part=snippet"
 
     try {
+        //console.log(`pub ${url}`)
         let data = await fetch(url)
         let json = await data.json()
+        //console.log(`pub ${JSON.stringify(json)}`)
         if (json.items && json.items.length > 0) {
             result = json.items[0].snippet.publishedAt
+            //console.log(`pub ${result}`)
         }
     }
     catch (err) {
@@ -234,11 +239,11 @@ getVideoFromDB = async (id) => {
             result = result[0]
             if (result.status === "FINISHED") {
                 reject = {
-                    "rejectCode": 1
+                    "rejectCode": "FINISHED"
                 }
             } else {
                 reject = {
-                    "rejectCode": 6
+                    "rejectCode": "QUEUED"
                 }
             }
         }
@@ -348,6 +353,4 @@ schedulerWs = async () => {
 
 // Lancement du Job WS toutes les 10s.
 cron.schedule('*/5 * * * * *', schedulerWs);
-cron.schedule('0 * * * * *', checkYoutubeChannelForNewVideos);
-
-
+//cron.schedule('0 * * * * *', checkYoutubeChannelForNewVideos);
