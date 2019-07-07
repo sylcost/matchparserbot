@@ -5,6 +5,7 @@ import "./css/styles.css"
 import store from './store/Store.js'
 import { CurrentProcess } from './CurrentProcessing.js'
 import { VideoChecked } from './VideoChecked.js'
+import { VideoResume } from './VideoResume.js'
 import io from 'socket.io-client'
 import Button from '@material-ui/core/Button';
 import AppBar from '@material-ui/core/AppBar'
@@ -26,6 +27,7 @@ import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
 import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import DeleteIcon from '@material-ui/icons/Delete';
+import DoneIcon from '@material-ui/icons/Done';
 import PlayCircleFilledIcon from '@material-ui/icons/PlayCircleFilled';
 import Tooltip from '@material-ui/core/Tooltip';
 import { withStyles } from '@material-ui/core/styles'; 
@@ -74,55 +76,6 @@ export const App = observer(() => {
         return formatMatchTime(hour, minute, second) + " " + p1 + " vs " + p2 + "\n"
     }
 
-    // List all the differents characters if the video has already been parsed
-    let characters = []
-    store.mainPage.videoChecked.matches.forEach(video => {
-        if (!characters.includes(video.p1)) {
-            characters.push(video.p1)
-        }
-        if (!characters.includes(video.p2)) {
-            characters.push(video.p2)
-        }
-    })
-    characters.sort()
-
-    // Map with the differents characters and the number of matches they appear
-    let charactersMap = new Map()
-    store.mainPage.videoChecked.matches.forEach(video => {
-        if (!charactersMap.has(video.p1)) {
-            charactersMap.set(video.p1, 1)
-        } else {
-            let count = charactersMap.get(video.p1)
-            charactersMap.set(video.p1, count+1)
-        }
-        if (video.p1 !== video.p2) {
-            if (!charactersMap.has(video.p2)) {
-                charactersMap.set(video.p2, 1)
-            } else {
-                let count = charactersMap.get(video.p2)
-                charactersMap.set(video.p2, count+1)
-            }
-        }
-        
-    })
-
-    // Text of the result of the parsing
-    let intro = store.mainPage.videoChecked.matches.length + " matches detected.\n"
-    intro += characters.length + " differents characters : " + characters + ".\n"
-    let matches = store.mainPage.videoChecked.matches.map(match => formatMatchText(match.hour, match.minute, match.second, match.p1, match.p2))
-    let resultParsing = 
-        (<pre>
-            {intro}
-            {matches}
-        </pre>)
-
-    const StyledCardMedia = withStyles({
-        root: {
-        width: '336px',
-        marginLeft: "auto",
-        marginRight: "auto"
-        }
-    })(CardMedia);
 
     const StyledTooltip = withStyles({
         tooltip: {
@@ -130,35 +83,33 @@ export const App = observer(() => {
         }
     })(Tooltip);
 
-    const StyledChip = withStyles({
-        root: {
-        fontSize: "large"
-        }
-    })(Chip);
   
 
-    let displayVideoInfos = !store.mainPage.checkingVideo && (store.mainPage.videoChecked.url !== "" || store.mainPage.videoChecked.rejectReason !== "")
+    let displayParsedVideoInfos = !store.mainPage.checkingVideo 
+        && (store.mainPage.videoChecked.url !== "" || store.mainPage.videoChecked.rejectReason !== "")
+        && store.mainPage.videoChecked.matches.length > 0
 
+    let displayNotParsedVideoInfos = store.mainPage.videoChecked.url !== ""
+        && store.mainPage.videoChecked.matches.length == 0
 
-
-    let joliParsing = store.mainPage.videoChecked.matches.length + " matches detected.\n" + "Featuring characters :\n"
-    let img = characters.map(char => 
-        (<StyledTooltip title={char + " (" + charactersMap.get(char) + ")"} placement="bottom" key={char}>
-            <img src={`icons/${char}.png`} alt={char} style={{width:96, height:96}} key={char}/>
-        </StyledTooltip>
-
-        ))
+    let xsFirstGrid = displayNotParsedVideoInfos ? 1 : 4
+    let xsSecondGrid = displayNotParsedVideoInfos ? 5 : 4
+    let xsThirdGrid = displayNotParsedVideoInfos ? 1 : 3
 
 
     let matchesList = store.mainPage.videoChecked.matches.map(match => (
         <ListItem key={`${match.hour}+${match.minute}+${match.second}`}>
             <ListItemAvatar>
-                <Avatar alt={match.p1} src={`icons/${match.p1}.png`} />
+                <StyledTooltip title={match.p1} placement="left-start" >
+                    <Avatar alt={match.p1} src={`icons/${match.p1}.png`} />
+                </StyledTooltip>
             </ListItemAvatar>
             <ListItemAvatar>
-                <Avatar alt={match.p2} src={`icons/${match.p2}.png`} />
+                <StyledTooltip title={match.p2} placement="right-start" >
+                    <Avatar alt={match.p2} src={`icons/${match.p2}.png`} />
+                </StyledTooltip>
             </ListItemAvatar>
-            <ListItemText primary={formatMatchTime(match.hour, match.minute, match.second)} 
+            <ListItemText primary={formatMatchTime(match.hour, match.minute, match.second)}
             />
             <ListItemSecondaryAction>
                 <IconButton aria-label="Delete" href={store.mainPage.videoChecked.url + "&t=" + match.hour + "h" + match.minute + "m" + match.second + "s"} >
@@ -171,7 +122,7 @@ export const App = observer(() => {
         <div>
             <AppBar position="static" color="primary">
                 <Toolbar>
-                MazkX3k8giA
+                MazkX3k8giA - LbLzbMr_7wk - pvFpm9tWgl4
                 </Toolbar>
             </AppBar>
             r1VxsaLj858
@@ -196,60 +147,30 @@ export const App = observer(() => {
                             />
                         </form>
                     </Paper>
-                    <Collapse in={store.mainPage.checkingVideo} style={{ paddingTop: 10, paddingLeft: 50, paddingRight: 50 }}>
-                        <Grid container justify="center" >
+                    <Collapse in={store.mainPage.checkingVideo} >
+                        <Grid container justify="center" style={{ paddingTop: 40, paddingLeft: 50, paddingRight: 50 }}>
                                 <CircularProgress size={100} />
                         </Grid>
                     </Collapse>
-                    
-
-
                 </Grid>
                 
-                
-                
-                
+
                     <Grid container justify="center" spacing={24} style={{ paddingTop: 100, paddingBottom: 10 }} >
-                        <Grid item  xs={4}>
-                            <Collapse in={!!displayVideoInfos} >
-                                <Paper elevation={6} style={{backgroundColor: '#546E7A'}}>
-                                    <Grid item  >
-                                        <img src={store.mainPage.videoChecked.thumbnail} alt="thumbnail" style={{width:336, height:188, marginLeft: "auto", marginRight: "auto", display: "block", borderRadius: "15px", paddingTop: 20}} />
-                                    </Grid>
-                                    <Grid item  >
-                                        <div style={{color: "white", paddingLeft: 50, paddingBottom: 20}} >
-                                            <br />
-                                            <a href={store.mainPage.videoChecked.url} style={{color: "white", fontWeight: "bold"}} >{store.mainPage.videoChecked.title}</a>
-                                            <br />
-                                            <a href={store.mainPage.videoChecked.channelUrl} style={{color: "white"}} >{store.mainPage.videoChecked.channelName}</a>
-                                            <br/>
-                                            {store.mainPage.videoChecked.length}
-                                            <br />
-                                            Published : {store.mainPage.videoChecked.publishedDate}
-                                            <br />
-                                        </div>
-                                    </Grid>
-                                </Paper>
+                        <Grid item  xs={xsFirstGrid}>
+                            <Collapse in={displayParsedVideoInfos} >
+                                <VideoChecked video={store.mainPage.videoChecked}/>
                             </Collapse>
                         </Grid>
-                        <Grid item  xs={4}>
-                            <Collapse in={!!displayVideoInfos} >
-                                <Paper elevation={6} style={{backgroundColor: '#546E7A', paddingTop: 10}}>
-                                    <div style={{color: "white", paddingLeft: 50}}>
-                                        {store.mainPage.videoChecked.matches.length} matches detected.
-                                        <br />
-                                        Featuring {characters.length} differents characters :
-                                        <br />
-                                        
-                                    </div>
-                                    <div>
-                                            {img}
-                                        </div>
-                                </Paper>
+                        <Grid item  xs={xsSecondGrid}>
+                            <Collapse in={displayParsedVideoInfos} >
+                                <VideoResume video={store.mainPage.videoChecked} />
+                            </Collapse>
+                            <Collapse in={displayNotParsedVideoInfos} >
+                                <VideoChecked video={store.mainPage.videoChecked} />
                             </Collapse>
                         </Grid>
-                        <Grid item  xs={3}>
-                            <Collapse in={!!displayVideoInfos}  >
+                        <Grid item  xs={xsThirdGrid}>
+                            <Collapse in={displayParsedVideoInfos}  >
                                 <Paper elevation={6} style={{backgroundColor: '#546E7A', paddingTop: 20}}>
                                     <div >
                                         <List >

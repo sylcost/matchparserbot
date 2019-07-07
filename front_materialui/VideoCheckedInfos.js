@@ -44,8 +44,8 @@ export const VideoCheckedInfos = observer((props) => {
             {matches}
         </pre>)
 
-    let videoInfo =
-    (<Row className="show-grid">
+    return (
+        <Row className="show-grid">
         <Col>
             <div align="center">
                 <Image src={props.video.thumbnail} />
@@ -60,10 +60,7 @@ export const VideoCheckedInfos = observer((props) => {
             </h4>
             {props.video.matches.length > 0 ? resultParsing : null}
         </Col>
-    </Row>)
-
-    return (
-        props.video.url || props.video.rejectReason ? videoInfo : null
+    </Row>
     );
 
 })
