@@ -1,3 +1,4 @@
 node_modules
 front_materialui/dist/bundle.js
 .idea
+/front_materialui/dist/
