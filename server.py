@@ -76,7 +76,12 @@ def index():
     scheduler.get_job("mainJob").modify(next_run_time=datetime.datetime.now())
     return jsonify({"fire": "ok"})
 
-
+# download only
+@app.route('/onlydl/<idvid>')
+def onlydl(idvid):
+    print("download:"+idvid)
+    downloader.downloadVideo(idvid)
+    return jsonify({"download only": idvid})
 
 # local test
 @app.route('/testlocal')
@@ -97,14 +102,12 @@ def testLocal():
             "status": "DOWNLOADED",
             "addDate": datetime.datetime.now(),
             "dl": 100,
-            "frameCounter": 0,
-            "frameTotal": 0,
             "parsing": 0,
             "length": "99mn",
         })
     mongo.db.matches.delete_many({"idVideo": "test"})
     print("db ok")
-    copy2(Config.get('PARSER', 'videoFolder')+"acho5.mp4", Config.get('PARSER', 'videoFolder')+"test.mp4")
+    copy2(Config.get('PARSER', 'videoFolder')+"dHAZGFJ7YME.mp4", Config.get('PARSER', 'videoFolder')+"test.mp4")
     print("copy ok")
     parser.parsevideo("test")
     return jsonify({"test": "ok"})

@@ -17,7 +17,7 @@ class Downloader(object):
 
     # on_progress_callback takes 4 parameters.
     def dlProgress(self, stream=None, chunk=None, file_handle=None, remaining=None):
-        print("filesize="+str(self.filesize)+" remaining="+str(remaining))
+        #print("filesize="+str(self.filesize)+" remaining="+str(remaining))
         if remaining != None:
             percent = (100 * (self.filesize - remaining)) // self.filesize
 
