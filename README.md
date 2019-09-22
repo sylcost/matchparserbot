@@ -1,8 +1,8 @@
 # matchparserbot
 
-Install PYTHON 2.7
+Install PYTHON 3+
 
-`pip install opencv-python Flask-PyMongo jsonmerge pytube pymongo apscheduler flask`
+`pip install opencv-python Flask-PyMongo jsonmerge pytube pymongo apscheduler flask ConfigParser`
 
 
 Install NodeJS
@@ -11,7 +11,7 @@ Install NodeJS
 
 `npm run build`
  
- to be continued
+ ???
 
 `node server.js`
 

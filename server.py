@@ -7,7 +7,8 @@ import logging
 from Downloader import Downloader
 from Parser import Parser
 from ParserTest import ParserTest
-import ConfigParser
+from configparser import ConfigParser
+from shutil import copy2
 import sys
 import datetime
 import os
@@ -23,7 +24,7 @@ scheduler = None
 logLevels = {"DEBUG":10, "INFO":20, "WARNING":30, "ERROR":40,"CRITICAL":50}
 
 # read conf
-Config = ConfigParser.ConfigParser()
+Config = ConfigParser()
 Config.read("conf.ini")
 
 ''' check if conf is valid '''
@@ -81,9 +82,32 @@ def index():
 @app.route('/testlocal')
 def testLocal():
     print("test local")
-    parserTest.parsevideo("gUsyr7s_G1o")
-    #parserTest.test()
-    print("fin test local")
+
+    if mongo.db.videos.count_documents({"_id": "test"}) > 0:
+        mongo.db.videos.update_one({
+            "_id": "test"
+        }, {
+            "$set": {
+                "status": "DOWNLOADED",
+                "parsing": 0
+        }})
+    else:
+        mongo.db.videos.insert_one({
+            "_id" : "test",
+            "status": "DOWNLOADED",
+            "addDate": datetime.datetime.now(),
+            "dl": 100,
+            "frameCounter": 0,
+            "frameTotal": 0,
+            "parsing": 0,
+            "length": "99mn",
+        })
+    mongo.db.matches.delete_many({"idVideo": "test"})
+    print("db ok")
+    copy2(Config.get('PARSER', 'videoFolder')+"acho5.mp4", Config.get('PARSER', 'videoFolder')+"test.mp4")
+    print("copy ok")
+    parser.parsevideo("test")
+    return jsonify({"test": "ok"})
 
 # Launched  by scheduler
 # Get next video to DL from DB
@@ -117,14 +141,14 @@ def getNextVideoId():
 def correctDB():
     print("correct DB")
 
-    mongo.db.videos.update({
+    mongo.db.videos.update_one({
         "status": "DOWNLOADING"
     }, {
         "$set": {
             "status": "WAITING",
             "dl": 0
     }})
-    mongo.db.videos.update({
+    mongo.db.videos.update_one({
         "status": "PARSING"
     }, {
         "$set": {

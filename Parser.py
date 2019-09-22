@@ -25,7 +25,7 @@ class Parser(object):
         frameTotal = cam.get(cv2.CAP_PROP_FRAME_COUNT)
         currentPercentageParsing = 0
         print(str(frameTotal)+" frames")
-        self.mongodb.db.videos.update({
+        self.mongodb.db.videos.update_one({
             "_id": id
         }, {
             "$set": {
@@ -106,7 +106,7 @@ class Parser(object):
             percent = (100 * framenb) // frameTotal
             if percent > currentPercentageParsing:
                 currentPercentageParsing = percent
-                self.mongodb.db.videos.update({
+                self.mongodb.db.videos.update_one({
                     "_id": id
                 }, {
                     "$set": {
@@ -187,7 +187,7 @@ class Parser(object):
             cam.set(cv2.CAP_PROP_POS_FRAMES, framenb + step)
 
         # update db
-        self.mongodb.db.videos.update({
+        self.mongodb.db.videos.update_one({
             "_id": id
         }, {
             "$set": {
