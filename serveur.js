@@ -130,27 +130,31 @@ checkVideo = async (url) => {
         if (valid) {
             let basicInfos = await ytdl.getBasicInfo('http://www.youtube.com/watch?v='+url)
             //console.log(JSON.stringify(basicInfos.player_response.videoDetails.thumbnail.thumbnails))
+            //console.log(JSON.stringify(basicInfos.player_response.videoDetails))
+            console.log(JSON.stringify(basicInfos))
             let maxResThumbnail = basicInfos.thumbnail_url
             let res336Thumbnail = basicInfos.player_response.videoDetails.thumbnail.thumbnails.filter((tn) => {
                 return tn.width == "336"
             })
             maxResThumbnail = res336Thumbnail[0].url
             //console.log("maxResThumbnail:"+JSON.stringify(res336Thumbnail[0]))
-            let publishedDate = await getPublishedDate(basicInfos.video_id)
-            const videoDB = await getVideoFromDB(basicInfos.video_id)
+            let publishedDate = await getPublishedDate(basicInfos.player_response.videoDetails.videoId)
+            const videoDB = await getVideoFromDB(basicInfos.player_response.videoDetails.videoId)
             
             let videoInfo = {
                 "thumbnail": maxResThumbnail,
-                "title": basicInfos.title,
+                "title": basicInfos.player_response.videoDetails.title,
                 "channelName": basicInfos.author.name,
                 "channelUrl": basicInfos.author.channel_url,
-                "length": formatLength(basicInfos.length_seconds),
+                "length": formatLength(basicInfos.player_response.videoDetails.lengthSeconds),
                 "url": basicInfos.video_url,
                 "publishedDate": publishedDate,
-                "_id": basicInfos.video_id
+                "_id": basicInfos.player_response.videoDetails.videoId
             }
+            let rejectName = basicInfos.player_response.videoDetails.title.indexOf("BBCF") > 0 || basicInfos.player_response.videoDetails.title.indexOf("BLAZBLUE") > 0 ? {} : {"rejectCode": "BADNAME"}
             let rejectGameACHO = "GAMEacho" !== basicInfos.author.name ? {"rejectCode": "BADCHANNEL"} : {}
-            let rejectName = basicInfos.title.indexOf("BBCF") > 0 || basicInfos.title.indexOf("BLAZBLUE") > 0 ? {} : {"rejectCode": "BADNAME"}
+            console.log(JSON.stringify(rejectName))
+            console.log(JSON.stringify(rejectGameACHO))
             result = {...videoInfo, ...rejectGameACHO, ...rejectName, ...videoDB}
     
         } else {

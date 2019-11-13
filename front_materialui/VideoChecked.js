@@ -62,6 +62,14 @@ export const VideoChecked = observer((props) => {
             chip = <PublishIcon />
     }
 
+    let styledChip = <StyledChip label={props.video.rejectReason} color="secondary" icon={chip} />
+    let bouton = (
+        <div>
+            <Button variant="contained" color="secondary" size="large">
+                Cannot add video
+            </Button>
+        </div>)
+    console.log(JSON.stringify(props.video))
 
     return (
         <Paper elevation={6} style={{backgroundColor: '#546E7A'}}>
@@ -80,10 +88,7 @@ export const VideoChecked = observer((props) => {
                     Published : {props.video.publishedDate}
                     <br />
                     <br />
-                    <StyledChip label={props.video.rejectReason} color="secondary" icon={chip} />
-                    <br />
-                    <br />
-                    {props.video.rejectCode === "" ? button : null}
+                    {props.video.rejectReason ? styledChip : button}
                 </div>
             </Grid>
         </Paper>

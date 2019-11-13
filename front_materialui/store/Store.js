@@ -39,10 +39,11 @@ const VideoChecked = types.model("VideoChecked", {
     channelName: types.optional(types.string, ""),
     thumbnail: types.optional(types.string, ""),
     rejectReason: types.optional(types.string, ""),
+    rejectCode: types.optional(types.string, ""),
     matches: types.optional(types.array(Match), [])
 })
 
-const MainPage = types.model("MainPage", {
+const PageCheckVideo = types.model("PageCheckVideo", {
     url: types.optional(types.string, ""),
     checkingVideo: types.optional(types.boolean, false),
     addingVideo: types.optional(types.boolean, false),
@@ -51,7 +52,8 @@ const MainPage = types.model("MainPage", {
 
 const Store = types.model("Store", {
   currentProcessing: CurrentProcessing,
-  mainPage: MainPage
+  pageCheckVideo: PageCheckVideo,
+  page: types.optional(types.string, "checkvideo"),
 }).actions((self) => ({
     init() {
         // Appels REST pour le currentProcessing stuff
@@ -60,23 +62,26 @@ const Store = types.model("Store", {
         .then(json => store.setCurrentProcessing(json))
         .catch(e => console.log("error during init:"+e))
     },
+    switchPage(page) {
+        self.page=page
+    },
     async changeUrl(url) {
         
-        applySnapshot(self.mainPage.videoChecked, {})
-        self.mainPage.url = url.target.value
+        applySnapshot(self.pageCheckVideo.videoChecked, {})
+        self.pageCheckVideo.url = url.target.value
         
-        if (self.mainPage.url.length > 6) {
-            let fetchUrl = self.mainPage.url
-            let indexMin = self.mainPage.url.indexOf("watch?v=") > 0 ? self.mainPage.url.indexOf("watch?v=") + 8 : 0
-            let indexMax = self.mainPage.url.indexOf("&") > 0 ? self.mainPage.url.indexOf("&") : self.mainPage.url.length
-            fetchUrl = self.mainPage.url.substring(indexMin, indexMax)
-            console.log("fetchUrl:"+fetchUrl)
+        if (self.pageCheckVideo.url.length > 6) {
+            let fetchUrl = self.pageCheckVideo.url
+            let indexMin = self.pageCheckVideo.url.indexOf("watch?v=") > 0 ? self.pageCheckVideo.url.indexOf("watch?v=") + 8 : 0
+            let indexMax = self.pageCheckVideo.url.indexOf("&") > 0 ? self.pageCheckVideo.url.indexOf("&") : self.pageCheckVideo.url.length
+            fetchUrl = self.pageCheckVideo.url.substring(indexMin, indexMax)
+            console.log("fetchUrl2:"+fetchUrl)
 
             // affichage du svg d'attente
-            self.mainPage.checkingVideo = true
+            self.pageCheckVideo.checkingVideo = true
 
             try {
-                let data = await fetch("http://localhost:3000/checkvideo/"+fetchUrl, {mode: "cors"})
+                let data = await fetch("http://localhost:3000/checkVideo/"+fetchUrl, {mode: "cors"})
                 let json = await data.json()
     
                 store.setVideosInfos(json)
@@ -87,47 +92,50 @@ const Store = types.model("Store", {
             }
             
         } else {
-            self.mainPage.checkingVideo = false
+            self.pageCheckVideo.checkingVideo = false
         }
     },
     setVideosInfos(json) {
 
-        applySnapshot(self.mainPage.videoChecked, json)
+        console.log(JSON.stringify(json))
+        applySnapshot(self.pageCheckVideo.videoChecked, json)
 
         switch(json.rejectCode) {
-            case 1:
-                self.mainPage.videoChecked.rejectReason = "Video has already been parsed."
+            case 'FINISHED':
+                self.pageCheckVideo.videoChecked.rejectReason = "Video has already been parsed."
                 break;
-            case 2:
-                self.mainPage.videoChecked.rejectReason = "Video not found."
+            case 'NOTVALID':
+                self.pageCheckVideo.videoChecked.rejectReason = "Video not found."
                 break;
-            case 3:
-                self.mainPage.videoChecked.rejectReason = "Video title must contain 'BBCF' or 'BLAZBLUE CONTRALFICTION'."
+            case 'BADNAME':
+                self.pageCheckVideo.videoChecked.rejectReason = "Video title must contain 'BBCF' or 'BLAZBLUE'."
                 break;
             case 4:
-                self.mainPage.videoChecked.rejectReason = "No 720p available for this video."
+                self.pageCheckVideo.videoChecked.rejectReason = "No 720p available for this video."
                 break;
-            case 5:
-                self.mainPage.videoChecked.rejectReason = "Must be from GAMEacho channel."
+            case 'BADCHANNEL':
+                self.pageCheckVideo.videoChecked.rejectReason = "Must be from GAMEacho channel."
                 break;
-            case 6:
-                self.mainPage.videoChecked.rejectReason = "Video is queued, it will be parsed as soon as possible."
+            case 'QUEUED':
+                self.pageCheckVideo.videoChecked.rejectReason = "Video is queued, it will be parsed as soon as possible."
                 break;
             default:
-                self.mainPage.videoChecked.rejectReason = ""
+                self.pageCheckVideo.videoChecked.rejectReason = ""
         }
+
+        console.log('>>>>>>>>>>>'+JSON.stringify(self.pageCheckVideo.videoChecked))
     },
     setCheckingVideo(checkingVideo) {
-        self.mainPage.checkingVideo = checkingVideo
+        self.pageCheckVideo.checkingVideo = checkingVideo
     },
     setAddingVideo(addingVideo) {
-        self.mainPage.addingVideo = addingVideo
+        self.pageCheckVideo.addingVideo = addingVideo
     },
     async addVideo() {
-        let fetchUrl = self.mainPage.url
-        let indexMin = self.mainPage.url.indexOf("watch?v=") > 0 ? self.mainPage.url.indexOf("watch?v=") + 8 : 0
-        let indexMax = self.mainPage.url.indexOf("&") > 0 ? self.mainPage.url.indexOf("&") : self.mainPage.url.length
-        fetchUrl = self.mainPage.url.substring(indexMin, indexMax)
+        let fetchUrl = self.pageCheckVideo.url
+        let indexMin = self.pageCheckVideo.url.indexOf("watch?v=") > 0 ? self.pageCheckVideo.url.indexOf("watch?v=") + 8 : 0
+        let indexMax = self.pageCheckVideo.url.indexOf("&") > 0 ? self.pageCheckVideo.url.indexOf("&") : self.pageCheckVideo.url.length
+        fetchUrl = self.pageCheckVideo.url.substring(indexMin, indexMax)
         console.log("parseUrl:"+fetchUrl)
 
         try {
@@ -149,12 +157,12 @@ const Store = types.model("Store", {
 }));
 
 const cp = CurrentProcessing.create();
-const mp = MainPage.create();
+const pcv = PageCheckVideo.create();
 
 
 const store = Store.create({
     currentProcessing: cp,
-    mainPage: mp
+    pageCheckVideo: pcv
 });
 
 export default store;

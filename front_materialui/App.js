@@ -40,6 +40,8 @@ import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
 import ListItemText from '@material-ui/core/ListItemText';
 import Avatar from '@material-ui/core/Avatar';
 import IconButton from '@material-ui/core/IconButton';
+import { PageCheckVideo } from './PageCheckVideo';
+import { PageBrowseVideos } from './PageBrowseVideos';
 
 
 // WebSocket
@@ -53,135 +55,24 @@ socket.on('connect', function() {
 
 export const App = observer(() => {
 
-    //console.log("store.mainPage.videoChecked.url:"+store.mainPage.videoChecked.url)
-    //console.log("store.mainPage.checkingVideo:"+store.mainPage.checkingVideo)
-    console.log("store.mainPage.videoChecked:"+JSON.stringify(store.mainPage.videoChecked))
-
-    function formatMatchTime(hour, minute, second) {
-        let result = ""
-        if (hour !== "0") {
-            result += hour+":"
-        }
-        if (minute < 10) {
-            result += "0"
-        }
-        result += minute+":"
-        if (second < 10) {
-            result += "0"
-        }
-        return result + second
-    }
-    
-    function formatMatchText(hour, minute, second, p1, p2) {
-        return formatMatchTime(hour, minute, second) + " " + p1 + " vs " + p2 + "\n"
-    }
-
-
-    const StyledTooltip = withStyles({
-        tooltip: {
-        fontSize: "large"
-        }
-    })(Tooltip);
-
-  
-
-    let displayParsedVideoInfos = !store.mainPage.checkingVideo 
-        && (store.mainPage.videoChecked.url !== "" || store.mainPage.videoChecked.rejectReason !== "")
-        && store.mainPage.videoChecked.matches.length > 0
-
-    let displayNotParsedVideoInfos = store.mainPage.videoChecked.url !== ""
-        && store.mainPage.videoChecked.matches.length == 0
-
-    let xsFirstGrid = displayNotParsedVideoInfos ? 1 : 4
-    let xsSecondGrid = displayNotParsedVideoInfos ? 5 : 4
-    let xsThirdGrid = displayNotParsedVideoInfos ? 1 : 3
-
-
-    let matchesList = store.mainPage.videoChecked.matches.map(match => (
-        <ListItem key={`${match.hour}+${match.minute}+${match.second}`}>
-            <ListItemAvatar>
-                <StyledTooltip title={match.p1} placement="left-start" >
-                    <Avatar alt={match.p1} src={`icons/${match.p1}.png`} />
-                </StyledTooltip>
-            </ListItemAvatar>
-            <ListItemAvatar>
-                <StyledTooltip title={match.p2} placement="right-start" >
-                    <Avatar alt={match.p2} src={`icons/${match.p2}.png`} />
-                </StyledTooltip>
-            </ListItemAvatar>
-            <ListItemText primary={formatMatchTime(match.hour, match.minute, match.second)}
-            />
-            <ListItemSecondaryAction>
-                <IconButton aria-label="Delete" href={store.mainPage.videoChecked.url + "&t=" + match.hour + "h" + match.minute + "m" + match.second + "s"} >
-                    <PlayCircleFilledIcon />
-                </IconButton>
-            </ListItemSecondaryAction>
-        </ListItem>))
-
     return (
         <div>
             <AppBar position="static" color="primary">
                 <Toolbar>
                 MazkX3k8giA - LbLzbMr_7wk - pvFpm9tWgl4
+                <Button variant="contained" color="secondary" onClick={() => store.switchPage('checkvideo')}>
+                    Check video
+                </Button>
+                <Button variant="contained" color="secondary" onClick={() => store.switchPage('browsevideos')}>
+                    Browse videos
+                </Button>
                 </Toolbar>
             </AppBar>
             r1VxsaLj858
             <Button variant="contained" color="secondary">
                 Hello World
             </Button>
-            <Grid container justify="center" spacing={24} style={{ paddingTop: 100, paddingBottom: 10 }}>
-                <Grid item xs={6} >
-                    <Paper style={{ paddingTop: 10, paddingBottom: 10 }} elevation={6}>
-                        <form  noValidate autoComplete="off" style={{fontSize:30, paddingLeft: 50, paddingRight: 50}}>
-                            <TextField
-                                id="standard-name"
-                                onChange={(url) => store.changeUrl(url)}
-                                placeholder="Paste Youtube URL here"
-                                fullWidth
-                                margin="normal"
-                                disabled={store.mainPage.checkingVideo}
-                                value={store.mainPage.url}
-                                inputProps={{
-                                    style: {fontSize:20}
-                                }}
-                            />
-                        </form>
-                    </Paper>
-                    <Collapse in={store.mainPage.checkingVideo} >
-                        <Grid container justify="center" style={{ paddingTop: 40, paddingLeft: 50, paddingRight: 50 }}>
-                                <CircularProgress size={100} />
-                        </Grid>
-                    </Collapse>
-                </Grid>
-                
-
-                    <Grid container justify="center" spacing={24} style={{ paddingTop: 100, paddingBottom: 10 }} >
-                        <Grid item  xs={xsFirstGrid}>
-                            <Collapse in={displayParsedVideoInfos} >
-                                <VideoChecked video={store.mainPage.videoChecked}/>
-                            </Collapse>
-                        </Grid>
-                        <Grid item  xs={xsSecondGrid}>
-                            <Collapse in={displayParsedVideoInfos} >
-                                <VideoResume video={store.mainPage.videoChecked} />
-                            </Collapse>
-                            <Collapse in={displayNotParsedVideoInfos} >
-                                <VideoChecked video={store.mainPage.videoChecked} />
-                            </Collapse>
-                        </Grid>
-                        <Grid item  xs={xsThirdGrid}>
-                            <Collapse in={displayParsedVideoInfos}  >
-                                <Paper elevation={6} style={{backgroundColor: '#546E7A', paddingTop: 20}}>
-                                    <div >
-                                        <List >
-                                            {matchesList}
-                                        </List>
-                                    </div>
-                                </Paper>
-                            </Collapse>
-                        </Grid>
-                    </Grid>
-            </Grid>
+            {store.page === "checkvideo" ? <PageCheckVideo /> : <PageBrowseVideos />}
         </div>
     );
 })
