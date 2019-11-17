@@ -3,9 +3,6 @@ import { observer } from 'mobx-react'
 import { applySnapshot } from "mobx-state-tree";
 import "./css/styles.css"
 import store from './store/Store.js'
-import { CurrentProcess } from './CurrentProcessing.js'
-import { VideoChecked } from './VideoChecked.js'
-import { VideoResume } from './VideoResume.js'
 import io from 'socket.io-client'
 import Button from '@material-ui/core/Button';
 import AppBar from '@material-ui/core/AppBar'
@@ -39,9 +36,11 @@ import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
 import ListItemText from '@material-ui/core/ListItemText';
 import Avatar from '@material-ui/core/Avatar';
-import IconButton from '@material-ui/core/IconButton';
+import Drawer from '@material-ui/core/Drawer';
 import { PageCheckVideo } from './PageCheckVideo';
 import { PageBrowseVideos } from './PageBrowseVideos';
+import { MatchList } from './MatchList';
+import { MatchesResume } from './MatchesResume';
 
 
 // WebSocket
@@ -55,8 +54,15 @@ socket.on('connect', function() {
 
 export const App = observer(() => {
 
+    console.log('v='+JSON.stringify(store.pageBrowseVideos.videos.filter(v => v._id === store.drawerRight.idVideo)))
+    console.log('matches='+JSON.stringify(store.pageBrowseVideos.videos.filter(v => v._id === store.drawerRight.idVideo).matches))
+    let vid = store.pageBrowseVideos.videos.filter(v => v._id === store.drawerRight.idVideo).length > 0
+    let matchesDrawer = vid ? store.pageBrowseVideos.videos.filter(v => v._id === store.drawerRight.idVideo)[0].matches : []
     return (
         <div>
+            <Drawer anchor="right" open={!!store.drawerRight.idVideo} onClose={() => store.closeDrawerRight()}>
+                <MatchList matches={matchesDrawer} />
+            </Drawer>
             <AppBar position="static" color="primary">
                 <Toolbar>
                 MazkX3k8giA - LbLzbMr_7wk - pvFpm9tWgl4
@@ -72,7 +78,7 @@ export const App = observer(() => {
             <Button variant="contained" color="secondary">
                 Hello World
             </Button>
-            {store.page === "checkvideo" ? <PageCheckVideo /> : <PageBrowseVideos />}
+            {store.page === "checkvideo" ? <PageCheckVideo /> : <PageBrowseVideos videos={store.pageBrowseVideos.videos} pageNumber={store.pageBrowseVideos.pageNumber} videosPerPage={store.pageBrowseVideos.videosPerPage}/>}
         </div>
     );
 })

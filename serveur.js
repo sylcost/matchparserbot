@@ -8,6 +8,7 @@ const io = require('socket.io')(server);
 const cron = require('node-cron');
 const ytdl = require('ytdl-core');
 const mongoose = require('mongoose');
+const mongoosePaginate = require('mongoose-paginate');
 const fetch = require('node-fetch');
 const Promise = require("bluebird");
 
@@ -42,6 +43,7 @@ const schemaVideo = mongoose.Schema({
     "parsing": Number,
     "_id": String
 });
+schemaVideo.plugin(mongoosePaginate);
 const Video = mongoose.model('Video', schemaVideo);
 
 // Creation Schema Match
@@ -117,6 +119,49 @@ app.get('/addvideo/:url', async function(req, res) {
     }
     
     res.send(video)
+});
+
+app.get('/browsevideos', async function(req, res) {
+    console.log(req.query)
+    console.log('req.query:'+JSON.stringify(req.query))
+
+
+    // var aggregate = MyModel.aggregate();
+    // aggregate.match({age : {'lt' : 18 } }).group({ _id: '$city' , count : { '$sum' : 1 } })
+    // var options = { page : 1, limit : 15}
+
+    // Book.paginate({}, {
+    //     page: 1,
+    //     limit: 24,
+    //     populate: {
+    //      path: 'authors',
+    //      select: 'name',
+    //      match: {
+    //         name: 'jean'
+    //      }
+    //     }, function (err, books) {
+    //         res.json(books);
+    //     });
+
+    const pageNumber = parseInt(req.query.pageNumber)
+    const videosPerPage = parseInt(req.query.videosPerPage)
+    
+    let result = await Video.aggregate([
+        { "$match": { "status": "FINISHED" } },
+        { $lookup: {
+                from: "matches",
+                localField: "_id",
+                foreignField: "idVideo",
+                as: "matches"
+            }
+    }])
+    .sort({'publishedDate': 'asc'})
+    .skip(pageNumber * videosPerPage)
+    .limit(videosPerPage)
+
+    console.log('result='+JSON.stringify(result))
+    
+    res.send(result);
 });
 
 
@@ -314,6 +359,10 @@ checkYoutubeChannelForNewVideos = async () => {
     }
 
     return result
+}
+
+browseVideos= async () => {
+
 }
 
 

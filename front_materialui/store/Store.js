@@ -12,6 +12,7 @@ const Match = types.model("Match", {
 })
 
 const Video = types.model("Video", {
+    _id: types.optional(types.string, ""),
     url: types.optional(types.string, ""),
     title: types.optional(types.string, ""),
     addDate: types.optional(types.string, ""),
@@ -23,13 +24,13 @@ const Video = types.model("Video", {
     channelName: types.optional(types.string, ""),
     thumbnail: types.optional(types.string, ""),
     status: types.optional(types.string, ""),
-    matches: types.optional(types.array(Match), [])
+    matches: types.optional(types.array(Match), []),
+    clicked: types.optional(types.boolean, false)
 })
 
 const CurrentProcessing = types.model("CurrentProcessing", {
     videos: types.array(Video)
 });
-
 
 const VideoChecked = types.model("VideoChecked", {
     url: types.optional(types.string, ""),
@@ -43,6 +44,12 @@ const VideoChecked = types.model("VideoChecked", {
     matches: types.optional(types.array(Match), [])
 })
 
+const PageBrowseVideos = types.model("PageBrowseVideos", {
+    videos: types.array(Video),
+    pageNumber: types.optional(types.number, 0),
+    videosPerPage: types.optional(types.number, 5),
+});
+
 const PageCheckVideo = types.model("PageCheckVideo", {
     url: types.optional(types.string, ""),
     checkingVideo: types.optional(types.boolean, false),
@@ -50,10 +57,18 @@ const PageCheckVideo = types.model("PageCheckVideo", {
     videoChecked: types.optional(VideoChecked, {})
 });
 
+const DrawerRight = types.model("DrawerRight", {
+    open: types.optional(types.boolean, false),
+    idVideo: types.optional(types.string, ""),
+    matches: types.optional(types.array(Match), [])
+});
+
 const Store = types.model("Store", {
   currentProcessing: CurrentProcessing,
   pageCheckVideo: PageCheckVideo,
+  pageBrowseVideos: PageBrowseVideos,
   page: types.optional(types.string, "checkvideo"),
+  drawerRight: DrawerRight
 }).actions((self) => ({
     init() {
         // Appels REST pour le currentProcessing stuff
@@ -62,8 +77,11 @@ const Store = types.model("Store", {
         .then(json => store.setCurrentProcessing(json))
         .catch(e => console.log("error during init:"+e))
     },
-    switchPage(page) {
+    async switchPage(page) {
         self.page=page
+        if (page === "browsevideos") {
+            await store.browseVideos(0, 5)
+        }
     },
     async changeUrl(url) {
         
@@ -150,19 +168,42 @@ const Store = types.model("Store", {
         }
         
         console.log('addvideo ok')
+    },
+    async browseVideos(pageNumber, videosPerPage) {
+        let data = await fetch('http://localhost:3000/browsevideos?pageNumber='+pageNumber+'&videosPerPage='+videosPerPage)
+        let json = await data.json()
+        console.log('json browseVideos'+JSON.stringify(json))
+        
+        self.pageBrowseVideos.pageNumber = pageNumber
+        self.pageBrowseVideos.videosPerPage = videosPerPage
+        console.log('json browseVideos'+JSON.stringify(json))
+        applySnapshot(self.pageBrowseVideos.videos, json)
+    },
+    setDrawerMatches(matches, v) {
+
+        //self.drawerRight.matches = matches.map(m => Match.create(m))
+        self.drawerRight.idVideo = v._id
+    },
+    closeDrawerRight() {
+        self.drawerRight.idVideo = ""
     }
 
 })).views((self) => ({
 
-}));
+}))
 
-const cp = CurrentProcessing.create();
-const pcv = PageCheckVideo.create();
+const cp = CurrentProcessing.create()
+const pcv = PageCheckVideo.create()
+const pbv = PageBrowseVideos.create()
+const dr = DrawerRight.create()
 
 
 const store = Store.create({
     currentProcessing: cp,
-    pageCheckVideo: pcv
-});
+    pageCheckVideo: pcv,
+    pageBrowseVideos: pbv,
+    page: 'checkvideo',
+    drawerRight: dr
+})
 
-export default store;
+export default store

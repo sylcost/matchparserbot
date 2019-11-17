@@ -20,54 +20,60 @@ import ListItemText from '@material-ui/core/ListItemText';
 import Avatar from '@material-ui/core/Avatar';
 import IconButton from '@material-ui/core/IconButton';
 
+import TableRow from '@material-ui/core/TableRow';
+import TableCell from '@material-ui/core/TableCell';
+import { MatchesResume } from './MatchesResume'
+
+let handleClick = function(id) {
+    console.log('props.video.matches '+JSON.stringify(id))
+    //store.setMatchesDrawerRight(id)
+}
 
 
 export const VideoResume = observer((props) => {
-
-    const StyledTooltip = withStyles({
-        tooltip: {
-        fontSize: "large"
-        }
-    })(Tooltip);
-
-    // Map with the differents characters and the number of matches they appear
-    let charactersMap = new Map()
-    props.video.matches.forEach(video => {
-        if (!charactersMap.has(video.p1)) {
-            charactersMap.set(video.p1, 1)
-        } else {
-            let count = charactersMap.get(video.p1)
-            charactersMap.set(video.p1, count+1)
-        }
-        if (video.p1 !== video.p2) {
-            if (!charactersMap.has(video.p2)) {
-                charactersMap.set(video.p2, 1)
-            } else {
-                let count = charactersMap.get(video.p2)
-                charactersMap.set(video.p2, count+1)
-            }
-        }
-        
-    })
-
-    let img = Array.from(charactersMap).map(([key,value]) => 
-        (<StyledTooltip title={key + " (" + value + ")"} placement="bottom" key={key}>
-            <img src={`icons/${key}.png`} alt={key} style={{width:96, height:96}} key={key}/>
-        </StyledTooltip>
-        ))
+    //console.log('props.video.url='+props.video._id)
+    //console.log('<<<<<<props.video='+JSON.stringify(props.video.matches))
 
     return (
-        
-        <Paper elevation={6} style={{backgroundColor: '#546E7A', paddingTop: 10}}>
-            <div style={{color: "white", paddingLeft: 50}}>
-                {props.video.matches.length} matches detected.
-                <br />
-                Featuring {charactersMap.size} differents characters :
-                <br />
-            </div>
-            <div style={{padding: 20}}>
-                    {img}
-                </div>
-        </Paper>
+        <TableRow 
+            key={props.video._id}
+            hover
+            onClick={() => store.setDrawerMatches(props.video.matches, props.video)}>
+            <TableCell scope="row" align="left">
+                <img src={`https://i.ytimg.com/vi/${props.video._id}/default.jpg`} alt="thumbnail" style={{display: "block"}} />
+            </TableCell>
+            <TableCell align="left">
+                <h4>
+                    <a href={props.video.url} style={{color: "white"}} >{props.video.title}</a>
+                    <br/>
+                    <a href={props.video.channelUrl} style={{color: "white"}} >{props.video.channelName}</a>
+                    <br/>
+                    {props.video.length}
+                    <br/>
+                    {props.video.publishedDate}
+                </h4>
+            </TableCell>
+            <TableCell align="left">
+                <MatchesResume matches={props.video.matches} />
+            </TableCell>
+        </TableRow>
     );
 })
+
+/*
+<ListItem key={props.video._id}>
+            <img src={`https://i.ytimg.com/vi/${props.video._id}/default.jpg`} alt="thumbnail" style={{marginLeft: "auto", marginRight: "auto", display: "block", padding: 20}} />
+            <ListItemText >
+                <h4>
+                    <a href={props.video.url} style={{color: "white"}} >{props.video.title}</a>
+                    <br/>
+                    <a href={props.video.channelUrl} style={{color: "white"}} >{props.video.channelName}</a>
+                    <br/>
+                    {props.video.length}
+                    <br/>
+                    {props.video.publishedDate}
+                </h4>
+            </ListItemText>
+        </ListItem>
+*/
+

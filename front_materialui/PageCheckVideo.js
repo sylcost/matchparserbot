@@ -5,7 +5,8 @@ import "./css/styles.css"
 import store from './store/Store.js'
 import { CurrentProcess } from './CurrentProcessing.js'
 import { VideoChecked } from './VideoChecked.js'
-import { VideoResume } from './VideoResume.js'
+import { MatchesResume } from './MatchesResume.js'
+import { MatchList } from './MatchList.js'
 import io from 'socket.io-client'
 import Button from '@material-ui/core/Button';
 import AppBar from '@material-ui/core/AppBar'
@@ -137,32 +138,24 @@ export const PageCheckVideo = observer(() => {
                 </Grid>
                 
 
-                    <Grid container justify="center" spacing={24} style={{ paddingTop: 100, paddingBottom: 10 }} >
-                        <Grid item  xs={xsFirstGrid}>
-                            <Collapse in={displayParsedVideoInfos} >
-                                <VideoChecked video={store.pageCheckVideo.videoChecked}/>
-                            </Collapse>
-                        </Grid>
-                        <Grid item  xs={xsSecondGrid}>
-                            <Collapse in={displayParsedVideoInfos} >
-                                <VideoResume video={store.pageCheckVideo.videoChecked} />
-                            </Collapse>
-                            <Collapse in={displayNotParsedVideoInfos} >
-                                <VideoChecked video={store.pageCheckVideo.videoChecked} />
-                            </Collapse>
-                        </Grid>
-                        <Grid item  xs={xsThirdGrid}>
-                            <Collapse in={displayParsedVideoInfos}  >
-                                <Paper elevation={6} style={{backgroundColor: '#546E7A', paddingTop: 20}}>
-                                    <div >
-                                        <List >
-                                            {matchesList}
-                                        </List>
-                                    </div>
-                                </Paper>
-                            </Collapse>
-                        </Grid>
+                <Grid container justify="center" spacing={24} style={{ paddingTop: 100, paddingBottom: 10 }} >
+                    <Grid item  xs={xsFirstGrid}>
+                        <Collapse in={displayParsedVideoInfos} >
+                            <VideoChecked video={store.pageCheckVideo.videoChecked}/>
+                        </Collapse>
                     </Grid>
+                    <Grid item  xs={xsSecondGrid}>
+                        <Collapse in={displayParsedVideoInfos} >
+                            <MatchesResume matches={store.pageCheckVideo.videoChecked.matches} />
+                        </Collapse>
+                        <Collapse in={displayNotParsedVideoInfos} >
+                            <VideoChecked video={store.pageCheckVideo.videoChecked} />
+                        </Collapse>
+                    </Grid>
+                    <Grid item  xs={xsThirdGrid}>
+                        <MatchList matches={store.pageCheckVideo.videoChecked.matches}/>
+                    </Grid>
+                </Grid>
             </Grid>
         </div>
     );

@@ -3,9 +3,6 @@ import { observer } from 'mobx-react'
 import { applySnapshot } from "mobx-state-tree";
 import "./css/styles.css"
 import store from './store/Store.js'
-import { CurrentProcess } from './CurrentProcessing.js'
-import { VideoChecked } from './VideoChecked.js'
-import { VideoResume } from './VideoResume.js'
 import io from 'socket.io-client'
 import Button from '@material-ui/core/Button';
 import AppBar from '@material-ui/core/AppBar'
@@ -40,9 +37,21 @@ import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
 import ListItemText from '@material-ui/core/ListItemText';
 import Avatar from '@material-ui/core/Avatar';
 import IconButton from '@material-ui/core/IconButton';
+import { MatchList } from './MatchList';
+import Table from '@material-ui/core/Table';
+import { VideoResume } from './VideoResume';
 
 
-export const PageBrowseVideos = observer(() => {
+export const PageBrowseVideos = observer((props) => {
+
+    props.videos.forEach(video => {
+        console.log('video:'+JSON.stringify(video))
+    })
+    
+
+    let videosList = props.videos.map(video => <VideoResume video={video} key={video._id}/>)
+
+
 
     return (
         <div>
@@ -52,7 +61,30 @@ export const PageBrowseVideos = observer(() => {
                         <Paper elevation={6} style={{backgroundColor: '#546E7A', paddingTop: 20}}>
                             <div >
                                 dfgdfgdgdfgdg
+                                <Button variant="contained" color="secondary" size="large"  onClick={() => store.browseVideos(0, 5)}>
+                                    Browse
+                                </Button>
+                                <Button 
+                                    variant="contained" 
+                                    color="secondary" 
+                                    size="large"  
+                                    onClick={() => store.browseVideos(store.pageBrowseVideos.pageNumber+1, store.pageBrowseVideos.videosPerPage)}>
+                                    Previous
+                                </Button>
+                                <Button 
+                                    variant="contained" 
+                                    color="secondary" 
+                                    size="large"  
+                                    onClick={() => store.browseVideos(store.pageBrowseVideos.pageNumber-1, store.pageBrowseVideos.videosPerPage)}>
+                                    Next
+                                </Button>
                             </div>
+                            <br />
+                            <Table aria-label="simple table">
+                                <tbody>
+                                    {videosList}
+                               </tbody>
+                            </Table>
                         </Paper>
                     </Collapse>
                 </Grid>
